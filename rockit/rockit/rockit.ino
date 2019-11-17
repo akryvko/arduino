@@ -36,7 +36,7 @@ const char* ssid = "KabelBox-4B98";
 const char* password = WIFI_PASSWORD;
 
 Servo servo;
-Timer servoTimer = Timer(2000, 600);
+Timer servoTimer = Timer(2000, 550);
 bool isServoActivated = false;
 bool servoStartPosition = true;
 
@@ -49,7 +49,7 @@ void setup() {
 
   servo.attach(0);
   delay(100);    
-  servo.write(60);  
+  servo.write(180);  
 
   servoTimer.start();
   statusTimer.start();
@@ -71,11 +71,15 @@ void loop() {
   }
 
   if (isServoActivated){
+    // activate servoß
     if (servoStartPosition) {
       servo.write(60);  
     } else {
       servo.write(90 + 60);
     }
+  } else {
+    // stop 
+    servo.write(180);
   }
   
 }

@@ -1,6 +1,7 @@
 package andrii.rockit
 
 import android.os.Bundle
+import android.util.Log
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
@@ -22,8 +23,10 @@ class MainActivity : AppCompatActivity() {
         on.setOnClickListener { view ->
             statusText.text = "Rocking..."
             CompletableFuture.runAsync {
-                URL("https://fathomless-cove-40821.herokuapp.com/kabachok/rock/start").readText()
-            }
+                Log.w("ROCKIT", "Sending request")
+                val res = URL("https://fathomless-cove-40821.herokuapp.com/kabachok/rock/start").readText()
+                Log.w("ROCKIT", "Response: $res")
+            }.join()
             Snackbar.make(view, "Lets rock!", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
@@ -32,7 +35,7 @@ class MainActivity : AppCompatActivity() {
             statusText.text = "Stopped"
             CompletableFuture.runAsync {
                 URL("https://fathomless-cove-40821.herokuapp.com/kabachok/rock/stop").readText()
-            }
+            }.join()
             Snackbar.make(view, "Zzzz...", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
