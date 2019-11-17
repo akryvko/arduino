@@ -31,15 +31,15 @@ boolean w3 = false;
 
 void loop() {
 
-  if (isNowBetween(3 * MK, 5 * MK)){
+  if (isNowBetween(3 * MK, 4 * MK)){
     forward(900);
   }
 
-  if (isNowBetween(5 * MK, 8 * MK)){
+  if (isNowBetween(4 * MK, 5 * MK)){
     backward(900);
   }
 
-  if (isNowAfter(8 * MK)){
+  if (isNowAfter(5 * MK)){
     stop();
   }
 
