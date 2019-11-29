@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">RockIt</string>
     <string name="action_settings">Settings</string>
+    <string name="status_rocking">Rocking…</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_unknown">Hmmm… I don\'t know</string>
+    <string name="response_rocking">started</string>
+    <string name="response_stopped">stopped</string>
+    <string name="view_zzz">Zzzz…</string>
+    <string name="current_cradle_state">Current cradle state:</string>
+    <string name="refresh_state">Refresh State</string>
 </resources>
