@@ -16,7 +16,7 @@ const sendStart = (res) => {
 };
 
 const sendStop = (res) => {
-    console.log(`${new Date().getTime()} - Stopping cradle...`);
+    console.log(`Stopping cradle...`);
     rockStatus = "stopped";
     if (!!res) {
         res.send(rockStatus);
