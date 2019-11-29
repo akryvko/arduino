@@ -20,8 +20,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val tag = "ROCKIT"
-        //const val rootUrl = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
-        const val rootUrl = "http://192.168.0.20:5000/kabachok/rock"
+        const val rootUrl = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
+        // const val rootUrl = "http://192.168.0.20:5000/kabachok/rock"
     }
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
