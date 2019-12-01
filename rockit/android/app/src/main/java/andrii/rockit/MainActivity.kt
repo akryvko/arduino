@@ -16,60 +16,19 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity() {
-    val timer: Timer = Timer("RefreshTimer")
+    private var timer: Timer? = null
 
     companion object {
-        const val tag = "ROCKIT"
-        const val rootUrl = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
+        const val TAG = "ROCKIT"
+        const val ROOT_URL = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
         // const val rootUrl = "http://192.168.0.20:5000/kabachok/rock"
+        const val REFRESH_DELAY : Long = 30 * 1000
     }
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
         super.onCreate(savedInstanceState, persistentState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
-
-        refreshStatus()
-    }
-
-    private fun mapResponseStatus(s: String): String = when (s) {
-        getString(R.string.response_rocking) -> getString(R.string.status_rocking)
-        getString(R.string.response_stopped) -> getString(R.string.status_stopped)
-        else -> getString(R.string.status_unknown)
-    }
-
-    private fun refreshStatus() {
-        statusText.text = getString(R.string.status_rocking)
-        CompletableFuture.runAsync {
-            Log.w(tag, "Sending request")
-            val res = URL(rootUrl).readText()
-            Log.w(tag, "Response: $res")
-            statusText.text = mapResponseStatus(res)
-        }.join()
-    }
-
-    private fun startCradle(view: View) {
-        statusText.text = getString(R.string.status_rocking)
-        CompletableFuture.runAsync {
-            Log.w(tag, "Sending request")
-            val res = URL("$rootUrl/start").readText()
-            Log.w(tag, "Response: $res")
-            statusText.text = mapResponseStatus(res)
-        }.join()
-        Snackbar.make(view, "Lets rock!", Snackbar.LENGTH_LONG)
-            .setAction("Action", null).show()
-    }
-
-    private fun stopCradle(view: View) {
-        statusText.text = getString(R.string.status_stopped)
-        CompletableFuture.runAsync {
-            Log.w(tag, "Sending request")
-            val res = URL("$rootUrl/stop").readText()
-            Log.w(tag, "Response: $res")
-            statusText.text = mapResponseStatus(res)
-        }.join()
-        Snackbar.make(view, getString(R.string.view_zzz), Snackbar.LENGTH_LONG)
-            .setAction("Action", null).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,10 +43,81 @@ class MainActivity : AppCompatActivity() {
         off.setOnClickListener { view ->
             stopCradle(view)
         }
+    }
 
-        refresh.setOnClickListener {
-            refreshStatus()
+    override fun onPause() {
+        super.onPause()
+        cancelRefreshTimer()
+    }
+
+    private fun mapResponseStatus(s: String): String = when (s) {
+        getString(R.string.response_rocking) -> getString(R.string.status_rocking)
+        getString(R.string.response_stopped) -> getString(R.string.status_stopped)
+        else -> getString(R.string.status_unknown)
+    }
+
+    private fun refreshStatus(view: View) {
+        statusText.text = getString(R.string.status_rocking)
+        CompletableFuture.runAsync {
+            Log.w(TAG, "Sending request")
+            val res = URL(ROOT_URL).readText()
+            Log.w(TAG, "Response: $res")
+            statusText.text = mapResponseStatus(res)
+        }.join()
+        Snackbar.make(view, getString(R.string.refreshing_state), Snackbar.LENGTH_LONG)
+            .setAction("Action", null).show()
+    }
+
+    private fun startCradle(view: View) {
+        statusText.text = getString(R.string.status_rocking)
+        CompletableFuture.runAsync {
+            Log.w(TAG, "Sending request")
+            val res = URL("$ROOT_URL/start").readText()
+            Log.w(TAG, "Response: $res")
+            statusText.text = mapResponseStatus(res)
+        }.join()
+        Snackbar.make(view, "Lets rock!", Snackbar.LENGTH_LONG)
+            .setAction("Action", null).show()
+    }
+
+    private fun stopCradle(view: View) {
+        statusText.text = getString(R.string.status_stopped)
+        CompletableFuture.runAsync {
+            Log.w(TAG, "Sending request")
+            val res = URL("$ROOT_URL/stop").readText()
+            Log.w(TAG, "Response: $res")
+            statusText.text = mapResponseStatus(res)
+        }.join()
+        Snackbar.make(view, getString(R.string.view_zzz), Snackbar.LENGTH_LONG)
+            .setAction("Action", null).show()
+    }
+
+    private fun cancelRefreshTimer() {
+        if (timer != null) {
+            timer!!.cancel()
         }
+    }
+
+    private fun runRefreshTimer() {
+        if (timer != null) {
+            cancelRefreshTimer()
+        }
+        timer = Timer("Refresh Timer")
+        class RefreshTimerTask : TimerTask() {
+            override fun run() {
+                runOnUiThread {
+                    Runnable {
+                        refreshStatus(activityMain)
+                    }.run()
+                }
+            }
+        }
+        timer!!.scheduleAtFixedRate(RefreshTimerTask(), 0, REFRESH_DELAY)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        runRefreshTimer()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -105,4 +135,6 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+
+
 }
