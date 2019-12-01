@@ -4,6 +4,7 @@
     <string name="status_rocking">Rocking…</string>
     <string name="status_stopped">Stopped</string>
     <string name="status_unknown">Hmmm… I don\'t know</string>
+    <string name="status_since">since</string>
     <string name="response_rocking">started</string>
     <string name="response_stopped">stopped</string>
     <string name="view_zzz">Zzzz…</string>

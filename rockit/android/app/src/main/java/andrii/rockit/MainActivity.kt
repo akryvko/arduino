@@ -11,7 +11,14 @@ import android.view.View
 
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import org.json.JSONObject
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
 import java.net.URL
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
@@ -20,8 +27,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "ROCKIT"
-        const val ROOT_URL = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
-        // const val rootUrl = "http://192.168.0.20:5000/kabachok/rock"
+        //const val ROOT_URL = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
+        const val ROOT_URL = "http://192.168.0.20:5000/kabachok/rock"
         const val REFRESH_DELAY : Long = 30 * 1000
     }
 
@@ -50,19 +57,28 @@ class MainActivity : AppCompatActivity() {
         cancelRefreshTimer()
     }
 
-    private fun mapResponseStatus(s: String): String = when (s) {
+    private fun mapResponseStatus(response: JSONObject): String = when (response.getString("status")) {
         getString(R.string.response_rocking) -> getString(R.string.status_rocking)
         getString(R.string.response_stopped) -> getString(R.string.status_stopped)
         else -> getString(R.string.status_unknown)
     }
 
+    private fun getResponseStatusDuration(response: JSONObject): String {
+        val since = response.getLong("since")
+        if (since > 0) {
+            val instant = Instant.ofEpochMilli(since)
+            val localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            val formatted = DateTimeFormatter.ofPattern("HH:mm")
+                .format(localDateTime)
+            return "${getString(R.string.status_since)} $formatted"
+        }
+        return ""
+    }
+
     private fun refreshStatus(view: View) {
         statusText.text = getString(R.string.status_rocking)
         CompletableFuture.runAsync {
-            Log.w(TAG, "Sending request")
-            val res = URL(ROOT_URL).readText()
-            Log.w(TAG, "Response: $res")
-            statusText.text = mapResponseStatus(res)
+            processGetResponse(URL(ROOT_URL))
         }.join()
         Snackbar.make(view, getString(R.string.refreshing_state), Snackbar.LENGTH_LONG)
             .setAction("Action", null).show()
@@ -71,10 +87,7 @@ class MainActivity : AppCompatActivity() {
     private fun startCradle(view: View) {
         statusText.text = getString(R.string.status_rocking)
         CompletableFuture.runAsync {
-            Log.w(TAG, "Sending request")
-            val res = URL("$ROOT_URL/start").readText()
-            Log.w(TAG, "Response: $res")
-            statusText.text = mapResponseStatus(res)
+            processGetResponse(URL("$ROOT_URL/start"))
         }.join()
         Snackbar.make(view, "Lets rock!", Snackbar.LENGTH_LONG)
             .setAction("Action", null).show()
@@ -83,13 +96,22 @@ class MainActivity : AppCompatActivity() {
     private fun stopCradle(view: View) {
         statusText.text = getString(R.string.status_stopped)
         CompletableFuture.runAsync {
-            Log.w(TAG, "Sending request")
-            val res = URL("$ROOT_URL/stop").readText()
-            Log.w(TAG, "Response: $res")
-            statusText.text = mapResponseStatus(res)
+            processGetResponse(URL("$ROOT_URL/stop"))
         }.join()
         Snackbar.make(view, getString(R.string.view_zzz), Snackbar.LENGTH_LONG)
             .setAction("Action", null).show()
+    }
+
+    private fun processGetResponse(url: URL) {
+        val c = url.openConnection()
+        c.setRequestProperty("Accept", "application/json")
+
+        Log.w(TAG, "Sending request to $url")
+        val res = InputStreamReader(c.getInputStream()).readText()
+        Log.w(TAG, "Response: $res")
+        val json = JSONObject(res)
+        statusText.text = mapResponseStatus(json)
+        statusSince.text = getResponseStatusDuration(json)
     }
 
     private fun cancelRefreshTimer() {
