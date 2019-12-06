@@ -1,5 +1,7 @@
 package andrii.rockit
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
@@ -13,7 +15,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import org.json.JSONObject
 import java.io.InputStreamReader
-import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
 import java.time.LocalDateTime
@@ -24,12 +25,15 @@ import java.util.concurrent.CompletableFuture
 
 class MainActivity : AppCompatActivity() {
     private var timer: Timer? = null
+    private var rockingTimer: Timer? = null
+    private var running: Boolean = false
 
     companion object {
         const val TAG = "ROCKIT"
         const val ROOT_URL = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
-        //const val ROOT_URL = "http://192.168.0.20:5000/kabachok/rock"
-        const val REFRESH_DELAY : Long = 30 * 1000
+        // const val ROOT_URL = "http://192.168.0.20:5000/kabachok/rock"
+        const val REFRESH_DELAY: Long = 30 * 1000
+        const val ROCK_DELAY: Long = 1000
     }
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
@@ -55,13 +59,24 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         cancelRefreshTimer()
+        cancelRockingTimer()
     }
 
-    private fun mapResponseStatus(response: JSONObject): String = when (response.getString("status")) {
-        getString(R.string.response_rocking) -> getString(R.string.status_rocking)
-        getString(R.string.response_stopped) -> getString(R.string.status_stopped)
-        else -> getString(R.string.status_unknown)
-    }
+    private fun mapResponseStatus(response: JSONObject): String =
+        when (response.getString("status")) {
+            getString(R.string.response_rocking) -> {
+                running = true
+                getString(R.string.status_rocking)
+            }
+            getString(R.string.response_stopped) -> {
+                running = false
+                getString(R.string.status_stopped)
+            }
+            else -> {
+                running = false
+                getString(R.string.status_unknown)
+            }
+        }
 
     private fun getResponseStatusDuration(response: JSONObject): String {
         val since = response.getLong("since")
@@ -88,6 +103,7 @@ class MainActivity : AppCompatActivity() {
         statusText.text = getString(R.string.status_rocking)
         CompletableFuture.runAsync {
             processGetResponse(URL("$ROOT_URL/start"))
+            runRockingTimer()
         }.join()
         Snackbar.make(view, "Lets rock!", Snackbar.LENGTH_LONG)
             .setAction("Action", null).show()
@@ -97,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         statusText.text = getString(R.string.status_stopped)
         CompletableFuture.runAsync {
             processGetResponse(URL("$ROOT_URL/stop"))
+            cancelRockingTimer()
         }.join()
         Snackbar.make(view, getString(R.string.view_zzz), Snackbar.LENGTH_LONG)
             .setAction("Action", null).show()
@@ -137,9 +154,48 @@ class MainActivity : AppCompatActivity() {
         timer!!.scheduleAtFixedRate(RefreshTimerTask(), 0, REFRESH_DELAY)
     }
 
+    private fun updateImageView() {
+        runOnUiThread {
+            if (running) {
+                val right =
+                    ObjectAnimator.ofFloat(imageView, View.ROTATION, 30F).setDuration(200)
+                val center =
+                    ObjectAnimator.ofFloat(imageView, View.ROTATION, 0F).setDuration(200)
+                val left =
+                    ObjectAnimator.ofFloat(imageView, View.ROTATION, -30F).setDuration(200)
+                val animatorSet = AnimatorSet()
+                animatorSet.playSequentially(right, center, left)
+                animatorSet.start()
+            } else {
+                imageView.rotation = 0F
+            }
+        }
+    }
+
+    private fun cancelRockingTimer() {
+        if (rockingTimer != null) {
+            rockingTimer!!.cancel()
+        }
+        updateImageView()
+    }
+
+    private fun runRockingTimer() {
+        if (rockingTimer != null) {
+            cancelRockingTimer()
+        }
+        rockingTimer = Timer("Rocking Timer")
+        class RockingTimerTask : TimerTask() {
+            override fun run() {
+                updateImageView()
+            }
+        }
+        rockingTimer!!.scheduleAtFixedRate(RockingTimerTask(), 0, ROCK_DELAY)
+    }
+
     override fun onResume() {
         super.onResume()
         runRefreshTimer()
+        runRockingTimer()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
