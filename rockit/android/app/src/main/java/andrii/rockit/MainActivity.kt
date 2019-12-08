@@ -30,8 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "ROCKIT"
-        const val ROOT_URL = "https://fathomless-cove-40821.herokuapp.com/kabachok/rock"
-        // const val ROOT_URL = "http://192.168.0.20:5000/kabachok/rock"
+        const val ROOT_URL = BuildConfig.ROOT_URL
         const val REFRESH_DELAY: Long = 30 * 1000
         const val ROCK_DELAY: Long = 1000
     }

@@ -14,11 +14,20 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        flavorDimensions "default"
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    productFlavors {
+        external {
+            buildConfigField "String", 'ROOT_URL', '"https://fathomless-cove-40821.herokuapp.com/kabachok/rock"'
+        }
+        local {
+            buildConfigField "String", 'ROOT_URL', '"http://192.168.0.20:5000/kabachok/rock"'
         }
     }
 }
